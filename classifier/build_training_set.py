@@ -1,6 +1,6 @@
 import numpy as np 
 import itertools as it
-import csv as csv
+import csv
 
 PATH_TO_DATA = '../data/'
 
@@ -38,7 +38,7 @@ def standing_file_name(season):
 match_history = []
 
 for season in seasons:
-	csv_file_object = csv.reader(open(match_file_name(season), 'rb')) 	
+	csv_file_object = csv.reader(open(match_file_name(season))) 	
 	
 	data=[] 	
 
@@ -55,7 +55,7 @@ match_history = np.array(match_history)
 standings_history = []
 
 for season in seasons:
-	csv_file_object = csv.reader(open(standing_file_name(season), 'rb'))
+	csv_file_object = csv.reader(open(standing_file_name(season)))
 
 	data = []
 	
@@ -80,9 +80,9 @@ standings_history = np_int(standings_history)
 
 match_history_new = np.zeros([NUM_SEASONS, MDS_PER_SEASON * MATCHES_PER_MD, 5])
 
-for season in xrange(NUM_SEASONS):
-	for match_day in xrange(MDS_PER_SEASON):
-		for match in xrange(MATCHES_PER_MD):
+for season in range(NUM_SEASONS):
+	for match_day in range(MDS_PER_SEASON):
+		for match in range(MATCHES_PER_MD):
 			match_history_new[season,  MATCHES_PER_MD * match_day +  match, :] = \
 			np.insert(match_history[season, MATCHES_PER_MD * match_day +  match, :], 0, match_day + 1, 0)
 
@@ -100,7 +100,7 @@ def find_standing(team, season, match_day):
 
 	position = -1
 
-	for pos in xrange((match_day - 1) * NUM_TEAMS, match_day * NUM_TEAMS):
+	for pos in range((match_day - 1) * NUM_TEAMS, match_day * NUM_TEAMS):
 		if(standings_history[season, pos, 1] == team):
 			position =  standings_history[season, pos, 0]
 
@@ -116,10 +116,10 @@ def find_matches_two(team1, team2, till_season, till_md):
 	
 	matches = []
 
-	for season in xrange(till_season):
+	for season in range(till_season):
 
 	#For all the seasons except till_season check all the match days
-		for match in xrange(MATCHES_PER_SEASON):
+		for match in range(MATCHES_PER_SEASON):
 			if(match_history[season, match, 1] == team1 and match_history[season, match, 2] == team2): 
 				matches.append(np.hstack((season, match_history[season, match, [0, 3, 4]])))
 
@@ -129,7 +129,7 @@ def find_matches_two(team1, team2, till_season, till_md):
 
 	season = till_season
 
-	for match in xrange((till_md - 1) * MATCHES_PER_MD):
+	for match in range((till_md - 1) * MATCHES_PER_MD):
 		if(match_history[season, match, 1] == team1 and match_history[season, match, 2] == team2): 
 			matches.append(np.hstack((season, match_history[season, match, [0, 3, 4]])))
 
@@ -145,9 +145,9 @@ def find_matches_one(team, till_season, till_md):
 	
 	matches = []
 
-	for season in xrange(till_season):
+	for season in range(till_season):
 	#For all the seasons except till_season check all the match days
-		for match in xrange(MATCHES_PER_SEASON):
+		for match in range(MATCHES_PER_SEASON):
 			if(match_history[season, match, 1] == team): 
 				matches.append(np.hstack((season, match_history[season, match, [0, 3, 4]])))
 
@@ -157,7 +157,7 @@ def find_matches_one(team, till_season, till_md):
 
 	season = till_season
 
-	for match in xrange((till_md - 1) * MATCHES_PER_MD):
+	for match in range((till_md - 1) * MATCHES_PER_MD):
 		if(match_history[season, match, 1] == team): 
 			matches.append(np.hstack((season, match_history[season, match, [0, 3, 4]])))
 
@@ -185,7 +185,7 @@ def build_team_stats(team1, team2, season, match_day, seasons_to_consider):
 	confrontations_new = [];
 	num_confrontations = confrontations.shape[0]
 
-	for match in xrange(num_confrontations):
+	for match in range(num_confrontations):
 		if(confrontations[match,0] >= (season -  seasons_to_consider)):
 			confrontations_new.append(confrontations[match])
 
@@ -198,7 +198,7 @@ def build_team_stats(team1, team2, season, match_day, seasons_to_consider):
 	scored_t2 = 0
 	missed_t2 = 0
 
-	for match in xrange(num_confrontations):
+	for match in range(num_confrontations):
 		scored_t2 += confrontations[match, 2]
 		missed_t2 += confrontations[match, 3]
 
@@ -224,7 +224,7 @@ def build_team_stats(team1, team2, season, match_day, seasons_to_consider):
 	matches_new = []
 	num_matches = matches.shape[0]
 
-	for match in xrange(num_matches):
+	for match in range(num_matches):
 		if(matches[match,0] >= (season -  seasons_to_consider)):
 			matches_new.append(matches[match])
 
@@ -238,7 +238,7 @@ def build_team_stats(team1, team2, season, match_day, seasons_to_consider):
 	scored_tot = 0
 	missed_tot = 0
 
-	for match in xrange(num_matches):
+	for match in range(num_matches):
 		scored_tot += matches[match, 2]
 		missed_tot += matches[match, 3]
 
@@ -259,4 +259,3 @@ def build_team_stats(team1, team2, season, match_day, seasons_to_consider):
 	stats[6] = missed_tot
 
 	return stats
-
