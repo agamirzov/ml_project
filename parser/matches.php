@@ -60,13 +60,14 @@ function split_date($str)
 
 $html_strings = array("2007_2008","2008_2009","2009_2010", "2010_2011", "2011_2012", "2012_2013", "2013_2014", "2014_2015");
 
+
 for($i = 0; $i < count($html_strings); $i++){
 
     $game_days = 38;
 
     $html_string = "http://wildstat.com/p/2301/ch/ENG_1_".$html_strings[$i]."/tbl/";
     $file = fopen("../data/matches".$html_strings[$i].".csv","w");
-    fwrite($file, "day,month,year,team1,team2,score1,score2\n");
+    fwrite($file, "match_day,team1,team2,score1,score2\n");
     for($j=1; $j <= $game_days; $j++)
     {
         $index = (string)$j;
@@ -81,22 +82,14 @@ for($i = 0; $i < count($html_strings); $i++){
             if(!(($row_cnt&1) == 0))
             {
                 $cell_cnt = 0;
+                fwrite($file, intval($j));
+                fwrite($file, ",");
 
                 foreach($tr->find('td') as $td)
                 {
                     $cell_cnt++;
-                    if($cell_cnt == 2)
-                    {
-                        $text = $td->find('a');
-                        $dates = split_date($text[0]->plaintext);
-                        fwrite($file, $dates[0]);
-                        fwrite($file, ",");
-                        fwrite($file, $dates[1]);
-                        fwrite($file, ",");
-                        fwrite($file, $dates[2]);
-                        fwrite($file, ",");
-                    }
-                    elseif($cell_cnt == 4 || $cell_cnt == 6)
+                    
+                    if($cell_cnt == 4 || $cell_cnt == 6)
                     {
                         $text = $td->find('a');
                         $team = get_team_int($text[0]->plaintext);
