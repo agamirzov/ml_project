@@ -803,7 +803,7 @@ class simple_html_dom_node
 			}
 			else
 			{
-				$converted_text = iconv($sourceCharset, $targetCharset, $text);
+				$converted_text = $text;
 			}
 		}
 

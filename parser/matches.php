@@ -40,6 +40,9 @@ function get_team_int($str)
     "Derby County"         => 33,
     ];
 
+    if (strpos($str, 'Liverpool') !== false) {
+        return 15;
+    }
     return $teams[trim($str)];
 }
 
@@ -63,7 +66,7 @@ for($i = 0; $i < count($html_strings); $i++){
 
     $html_string = "http://wildstat.com/p/2301/ch/ENG_1_".$html_strings[$i]."/tbl/";
     $file = fopen("../data/matches".$html_strings[$i].".csv","w");
-
+    fwrite($file, "day,month,year,team1,team2,score1,score2\n");
     for($j=1; $j <= $game_days; $j++)
     {
         $index = (string)$j;
