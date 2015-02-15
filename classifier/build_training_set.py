@@ -253,6 +253,8 @@ def matchups_till_date(team1, team2, seasons_to_consider, season, match_day):
 
     # Write result
     results = (common_matches.sum())/len(common_matches)
+    if results.empty:
+        results = pd.Series(0, index=['t1_avg_pts_mu', 't2_avg_pts_mu', 't1_avg_scrd_mu', 't1_avg_recv_mu'])
 
     return results
 
