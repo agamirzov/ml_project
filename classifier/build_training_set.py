@@ -12,7 +12,7 @@ SEASONS_TO_CONSIDER = 2
 MDS_PER_SEASON = 38
 MATCHES_PER_MD = 10
 MATCHES_PER_SEASON = MDS_PER_SEASON * MATCHES_PER_MD
-CURRENT_MD = 17
+CURRENT_MD = 26
 WIN_PTS = 3
 DRAW_PTS = 1
 LOSS_PTS = 0
@@ -21,11 +21,11 @@ def read_data():
     """Reads data from the csv files, return two arrays containing match_history and standings_history"""
     def match_file_name(season):
         """Generates the name of the file containing the match data for season"""
-        return PATH_TO_DATA + 'matches' + season + '.csv'
+        return "%smatches/matches%s.csv" % (PATH_TO_DATA, season) 
 
     def standing_file_name(season):
         """Generates the name of the file containing the match data for season"""
-        return PATH_TO_DATA + 'tables' + season + '.csv'    
+        return "%stables/tables%s.csv" % (PATH_TO_DATA, season) 
 
     #Read the csv files
     match_history = []
@@ -321,19 +321,38 @@ def build_vector_for_match(team1, team2, seasons_to_consider, season, match_day)
 
 
 def build_training_set():
-    result = pd.DataFrame()
-    season = '2012_2013'
-    season_index = seasons.index(season)
-    match_day = 4
-    md = match_history[season_index].loc[match_history[season_index]['match_day'] == match_day]
-    for match in md.iterrows():
-        team1 = match[1]['team1']
-        team2 = match[1]['team2']
-        score1 = match[1]['score1']
-        score2 = match[1]['score2']
+    def training_file_name(season):
+        return "%s/training/training_set%s.csv" % (PATH_TO_DATA, season) 
 
-        print(build_vector_for_match(team1, team2, SEASONS_TO_CONSIDER, season, match_day))
+    training_set = pd.DataFrame()
+    for season in seasons[SEASONS_TO_CONSIDER : NUM_SEASONS]:
+        season_index = seasons.index(season)
+        for match_day in range(1, MDS_PER_SEASON + 1):
+            md = match_history[season_index].loc[match_history[season_index]['match_day'] == match_day]
+            for match in md.iterrows():
+                team1 = match[1]['team1']
+                team2 = match[1]['team2']
+                score1 = match[1]['score1']
+                score2 = match[1]['score2']
 
-        print("\n")
+                this_game = build_vector_for_match(team1, team2, SEASONS_TO_CONSIDER, season, match_day)
+
+                if score1 > score2:
+                    result = 1 #t1 won
+                elif score2 > score1:
+                    result = 2 #t2 won
+                else:
+                    result = 0 #draw
+
+                this_game = this_game.append(pd.Series({'result' : result}))
+
+                training_set = training_set.append( this_game, ignore_index=True)
+       
+            print("training_set for md %d season %d" % (match_day, season_index))
+
+        file_name = training_file_name(season)
+        training_set.to_csv(file_name)
+        print("%s exported" % file_name)
+    
 
 build_training_set()

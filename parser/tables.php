@@ -58,7 +58,7 @@ for($i = 0; $i < count($html_strings); $i++)
     $game_days = 38;
 
     $html_string = "http://wildstat.com/p/2301/ch/ENG_1_".$html_strings[$i]."/tbl/";
-    $file = fopen("../data/tables".$html_strings[$i].".csv","w");
+    $file = fopen("../data/tables/tables".$html_strings[$i].".csv","w");
 
     fwrite($file, "match_day,standing,team,games,wins,draws,losses,scored,missed,points,home_wins,home_draws,home_losses,home_scored,home_missed,home_points,away_wins,away_draws,away_losses,away_scored,away_missed,away_points\n");
     for($j=1; $j <= $game_days; $j++)
