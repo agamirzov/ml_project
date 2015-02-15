@@ -107,7 +107,6 @@ def performance_till_date(team, seasons_to_consider, season, match_day):
 
     return stats
 
-
 def get_standing(team, season, match_day):
     """Determines team's standing on the previous match day
 
@@ -253,8 +252,6 @@ def matchups_till_date(team1, team2, seasons_to_consider, season, match_day):
 
     # Write result
     results = (common_matches.sum())/len(common_matches)
-    if results.empty:
-        results = pd.Series(0, index=['t1_avg_pts_mu', 't2_avg_pts_mu', 't1_avg_scrd_mu', 't1_avg_recv_mu'])
 
     return results
 
@@ -304,7 +301,7 @@ def build_vector_for_match(team1, team2, seasons_to_consider, season, match_day)
     Returns:
         vector - (pd.Series) containing all the data relevant to the match between two teams
     """
-    home = is_team_home(team1, season, match_day)
+    #home = is_team_home(team1, season, match_day)
     standing = pd.Series({'t1_standing' : get_standing(team1, season, match_day), 
                           't2_standing': get_standing(team2, season, match_day)})
     perf1 = performance_till_date(team1, seasons_to_consider, season, match_day)
@@ -316,13 +313,13 @@ def build_vector_for_match(team1, team2, seasons_to_consider, season, match_day)
                         'avg_points_per_game' : 't2_avg_pts_tot',
                         'avg_scored_per_game' : 't2_avg_scrd_tot'}, inplace=True)
     matchups = matchups_till_date(team1, team2, seasons_to_consider, season, match_day)
-    vector = pd.concat([home, standing, perf1, perf2, matchups])
+    vector = pd.concat([standing, perf1, perf2, matchups])
     return vector
 
 
 def build_training_set():
-    def training_file_name(season):
-        return "%s/training/training_set%s.csv" % (PATH_TO_DATA, season) 
+    def training_file_name():
+        return "%s/training/training_set.csv" % (PATH_TO_DATA) 
 
     training_set = pd.DataFrame()
     for season in seasons[SEASONS_TO_CONSIDER : NUM_SEASONS]:
@@ -348,11 +345,10 @@ def build_training_set():
 
                 training_set = training_set.append( this_game, ignore_index=True)
        
-            print("training_set for md %d season %d" % (match_day, season_index))
+        print("training examples for season %s calculated" % (season))
 
-        file_name = training_file_name(season)
-        training_set.to_csv(file_name)
-        print("%s exported" % file_name)
+    training_set.to_csv(training_file_name())
+    print("training examples successfully exported")
     
 
 build_training_set()
