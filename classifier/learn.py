@@ -35,17 +35,16 @@ def main():
 
         return my_data
 
-    def classify_svm(training_set, training_outcomes, validation_set, validation_outcomes):
-        """ Defines an SVM classifier and compute efficiency for one particular combination of trainig and validation sets
+    def classify_svm(training_set, training_outcomes, validation_set):
+        """ Defines an SVM classifier and compute predictions
         
         Arguments:
             trainig_set - (matrix of doubles) 
             training_outcomes - (vector of doubles) 
             validation_set - (matrix of doubles)
-            validation_outcomes - (vector of doubles) 
         
         Returns:
-            efficiency - (double) efficiency for one particular combination
+            prediction - (vector of doubles) predicted outcomes
         """
         
         # Define and train the classifyer
@@ -55,14 +54,7 @@ def main():
         # Predict new outcomes
         prediction = classifier.predict(validation_set)
 
-        # Compare predicted outcomes with known outcomes
-        num_predictions = len(validation_outcomes)
-        correct = np.count_nonzero(prediction == validation_outcomes)
-        
-        # Compute how many predicted values matching the known outcomes
-        efficiency = correct/num_predictions
-        
-        return efficiency
+        return prediction
 
     def compute_efficiency(data, validation_size, validation_step):
         """Computes average efficiency of the algorithm using cross validation
@@ -96,7 +88,14 @@ def main():
             training_outcomes = np.concatenate((data[0:i, 0], data[(i + validation_size):, 0]), axis=0)
 
             # Classify with the specified algorithm
-            efficiency = classify_svm(training_set, training_outcomes, validation_set, validation_outcomes)
+            prediction = classify_svm(training_set, training_outcomes, validation_set)
+
+            # Compare predicted outcomes with known outcomes
+            num_predictions = len(validation_outcomes)
+            correct = np.count_nonzero(prediction == validation_outcomes)
+        
+            # Compute how many predicted values matching the known outcomes (%)
+            efficiency = correct/num_predictions
             print("Validation step %d is computed. Efficiency: %f" % (combination_counter, efficiency))
 
             # Accumulate efficiency for all possible combinations
