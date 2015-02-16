@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn import svm
+from sklearn.neighbors import KNeighborsClassifier
 
 def main():
     
@@ -36,17 +37,7 @@ def main():
         return my_data
 
     def classify_svm(training_set, training_outcomes, validation_set):
-        """ Defines an SVM classifier and compute predictions
-        
-        Arguments:
-            trainig_set - (matrix of doubles) 
-            training_outcomes - (vector of doubles) 
-            validation_set - (matrix of doubles)
-        
-        Returns:
-            prediction - (vector of doubles) predicted outcomes
-        """
-        
+
         # Define and train the classifyer
         classifier = svm.SVC(gamma=0.001, C=100.)
         classifier.fit(training_set, training_outcomes)
@@ -56,7 +47,18 @@ def main():
 
         return prediction
 
-    def compute_efficiency(data, validation_size, validation_step):
+    def classify_knn(training_set, training_outcomes, validation_set):
+        
+        # Define and train the classifyer
+        classifier = KNeighborsClassifier(n_neighbors=20)
+        classifier.fit(training_set, training_outcomes)
+        
+        # Predict new outcomes
+        prediction = classifier.predict(validation_set)
+
+        return prediction
+
+    def compute_efficiency(data, validation_size, validation_step, classifyer_type):
         """Computes average efficiency of the algorithm using cross validation
         
         Arguments:
@@ -73,6 +75,15 @@ def main():
         combination_counter = 0
         validations_range = len(data) - validation_size
 
+        # Assign the type of the classifyer
+        if classifyer_type == "SVM":
+            predict = classify_svm
+        elif classifyer_type == "KNN":
+            predict = classify_knn
+        else:
+            print("Wrong classifyer type!")
+            return "No efficiency computed!"
+
         # Iterate over different combinations of trainig/validation sets
         for i in range(0, validations_range, validation_step):
 
@@ -88,7 +99,7 @@ def main():
             training_outcomes = np.concatenate((data[0:i, 0], data[(i + validation_size):, 0]), axis=0)
 
             # Classify with the specified algorithm
-            prediction = classify_svm(training_set, training_outcomes, validation_set)
+            prediction = predict(training_set, training_outcomes, validation_set)
 
             # Compare predicted outcomes with known outcomes
             num_predictions = len(validation_outcomes)
@@ -108,6 +119,7 @@ def main():
 
     """ Start program """
     
+    # Read .csv file
     my_data = read_data()
 
     # Length of the validation set (number of input vectors)
@@ -117,10 +129,10 @@ def main():
     validation_step_size = 300
 
     # Apply cross validation on the data set
-    efficiency = compute_efficiency(my_data, validation_set_size, validation_step_size)
+    efficiency = compute_efficiency(my_data, validation_set_size, validation_step_size, "KNN")
     
     # Print cross validation results
-    print(efficiency)
+    print("Total Efficiency: %s" % (efficiency))
 
 if __name__ == "__main__":
     main()
