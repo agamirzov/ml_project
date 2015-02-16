@@ -75,9 +75,9 @@ def main():
             in_season = standings_extracted[cnt].loc[standings_extracted[cnt]['team'] == team].empty
             # print(standings_extracted[cnt])
             if not(in_season):
-                points_past.append(int(standings_extracted[cnt][standings_extracted[cnt]['team'] == team]['points']))
-                scored_past.append(int(standings_extracted[cnt][standings_extracted[cnt]['team'] == team]['scored']))
-                missed_past.append(int(standings_extracted[cnt][standings_extracted[cnt]['team'] == team]['missed']))
+                points_past.append(apply_weight(int(standings_extracted[cnt][standings_extracted[cnt]['team'] == team]['points']), season_index - (i-1)))
+                scored_past.append(apply_weight(int(standings_extracted[cnt][standings_extracted[cnt]['team'] == team]['scored']), season_index - (i-1)))
+                missed_past.append(apply_weight(int(standings_extracted[cnt][standings_extracted[cnt]['team'] == team]['missed']), season_index - (i-1)))
                 seasons_plyed.append(i-1)
             cnt += 1
 
@@ -96,10 +96,12 @@ def main():
         if(match_day > 1):
            standings_curr = standings_history[0]['match_day'] == (match_day - 1)
            standings_curr_extracted =  standings_history[season_index][standings_curr]
-           points_curr = int(standings_curr_extracted[standings_curr_extracted['team'] == team]['points'])
-           scored_curr = int(standings_curr_extracted[standings_curr_extracted['team'] == team]['scored'])
-           missed_curr = int(standings_curr_extracted[standings_curr_extracted['team'] == team]['missed'])
+           points_curr = apply_weight(int(standings_curr_extracted[standings_curr_extracted['team'] == team]['points']), 0)
+           scored_curr = apply_weight(int(standings_curr_extracted[standings_curr_extracted['team'] == team]['scored']), 0)
+           missed_curr = apply_weight(int(standings_curr_extracted[standings_curr_extracted['team'] == team]['missed']), 0)
            tot_games += match_day - 1
+
+
 
         stats = pd.Series({'avg_points_per_game' : (tot_points_past + points_curr) / tot_games,
                            'avg_scored_per_game' : (tot_scored_past + scored_curr) / tot_games,
@@ -168,7 +170,7 @@ def main():
             (contains: [t1_avg_pts, t2_avg_pts, t1_avg_scrd, t1_avg_recv])
         """
 
-        def compute_parameters(matches, team1, team2):
+        def compute_parameters(matches, team1, team2, season):
             """Finds (team1 vs. team2) or (team2 vs. team1) matches and compute results for one specified season
             
             Arguments:
@@ -226,6 +228,8 @@ def main():
                                    't1_avg_scrd_mu': [t1_avg_scrd], 't1_avg_recv_mu': [t1_avg_recv]})
                 result = pd.concat([result, df])
 
+            result = apply_weight(result, season)
+
             return result
 
         # Init empty DataFrame
@@ -247,9 +251,9 @@ def main():
             # Search and accumulate common matches in the DataFrame
             if season_id == season_index:
                 matches = matches[:(match_day - 1)*MATCHES_PER_MD] # Restrict matches to current match day
-                common_matches = pd.concat([common_matches, compute_parameters(matches, team1, team2)])
+                common_matches = pd.concat([common_matches, compute_parameters(matches, team1, team2, season_index - season_id)])
             else:
-                common_matches = pd.concat([common_matches, compute_parameters(matches, team1, team2)])
+                common_matches = pd.concat([common_matches, compute_parameters(matches, team1, team2, season_index - season_id)])
 
         # Write result
         results = (common_matches.sum())/len(common_matches)
@@ -289,6 +293,27 @@ def main():
 
         result = pd.Series({'t1_home' : result})
         return result
+
+
+    def apply_weight(value, season):
+        """Apply the weight to the parameter depending on the season
+        
+        Arguments:
+            value - (double) the input 
+            season - (int) season index (0 - current, 1 - one before, etc.)
+        
+        Returns:
+            result - (double) weighted value
+        """
+
+        if season == 0:
+            weight = 0.6
+        elif season == 1:
+            weight = 0.3
+        else:
+            weight = 0.1
+
+        return value*weight
 
 
     def build_vector_for_match(team1, team2, seasons_to_consider, season, match_day):
