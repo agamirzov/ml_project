@@ -180,17 +180,25 @@ def main():
         print("Best estimators = %d Efficiency = %f" % (best_estimators, efficiency))
         return best_estimators
 
-    """ Start program """
+    class FFNetwork:
+        """A wrapper for the neurolab.net.newff()"""
+
+        def __init__(self, input_dim, minmax=[[-20, 20]], layers=[10, 1]):
+            self.network = nl.net.newff(minmax * input_dim, layers)
+
+        def fit(self, training_set, training_target):
+            length = training_target.shape[0]
+            training_target = training_target.reshape([length, 1])
+            error = self.network.train(training_set, training_target)
+
+        def predict(self, test_set):
+            pred = self.network.sim(test_set)[:, 0]
+            return pred
+
+    """Main"""
+
     # Read .csv file
     my_data = read_data()
-
-    # Apply cross validation on the data set
-    # efficiency = compute_efficiency(my_data, 10, svm.SVC(gamma=0.001, C=100.))
-    # print("Efficiency: %.2f" % efficiency)
-
-    # find_best_SVM([0.001,0.01],[10,50,100])
-    # find_best_KNN([3,5,10,20,30,50,100,300,1000])
-    # find_best_RandomForest([3,5,10,20,50,100])
 
 
 if __name__ == "__main__":
