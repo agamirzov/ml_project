@@ -5,6 +5,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn import tree
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import BernoulliNB
+from sklearn.naive_bayes import GaussianNB
 
 def main():
     
@@ -111,14 +112,86 @@ def main():
         # Return average efficiency
         return total_efficiency / counter
 
+   
+    def find_best_SVM(gamas, cs):
+        """ Computes the best combination parameters for SVM        
+
+        Arguments:
+            gamas - (array of doubles) array of the possible gammas
+            cs - (array of ints) array of possible C's
+        
+        Returns:
+            [best_gamma, best_c] - (double) best gamma, (int) best C
+        """
+        efficiency = 0
+        old_efficiency = 0
+        best_gamma = 0
+        best_c = 0
+        for ga in gamas:
+            for c in cs:
+                old_efficiency = compute_efficiency(my_data, 10, svm.SVC(gamma=ga, C=c))
+                if(efficiency < old_efficiency):
+                    efficiency = old_efficiency
+                    best_gamma = ga
+                    best_c = c
+                print("Current gamma = %f Current C = %d Efficiency = %f" % (ga, c, old_efficiency))
+        print("Best Gamma = %f Best C = %d Efficiency = %f" % (best_gamma, best_c, efficiency))
+        return best_gamma, best_c
+
+    def find_best_KNN(neighbors):
+        """ Computes the best combination parameters for KNN        
+
+        Arguments:
+            neighbors - (array of ints) array of possible neighbors
+        
+        Returns:
+            best_neighbors - (int) the best number of neighbors
+        """
+        efficiency = 0
+        old_efficiency = 0
+        best_neighbors = 0
+        for nn in neighbors:
+            old_efficiency = compute_efficiency(my_data, 10, KNeighborsClassifier(n_neighbors=nn))
+            if(efficiency < old_efficiency):
+                efficiency = old_efficiency
+                best_neighbors = nn
+            print("Current neighbors = %d Efficiency = %f" % (nn, old_efficiency))
+        print("Best neighbors = %d Efficiency = %f" % (best_neighbors, efficiency))
+        return best_neighbors
+
+    def find_best_RandomForest(estimators):
+        """ Computes the best combination parameters for KNN        
+
+        Arguments:
+            estimators - (array of ints) array of possible estimators
+        
+        Returns:
+            best_estimators - (int) the best number of estimators
+        """
+        efficiency = 0
+        old_efficiency = 0
+        best_estimators = 0
+        for ne in estimators:
+            old_efficiency = compute_efficiency(my_data, 10, RandomForestClassifier(n_estimators=ne))
+            if(efficiency < old_efficiency):
+                efficiency = old_efficiency
+                best_estimators = ne
+            print("Current estimators = %d Efficiency = %f" % (ne, old_efficiency))
+        print("Best estimators = %d Efficiency = %f" % (best_estimators, efficiency))
+        return best_estimators
+
     """ Start program """
-    
     # Read .csv file
     my_data = read_data()
 
     # Apply cross validation on the data set
-    efficiency = compute_efficiency(my_data, 10, svm.SVC(gamma=0.001, C=100.))
-    print("Efficiency: %.2f" % efficiency)
+    # efficiency = compute_efficiency(my_data, 10, svm.SVC(gamma=0.001, C=100.))
+    # print("Efficiency: %.2f" % efficiency)
+
+    # find_best_SVM([0.001,0.01],[10,50,100])
+    # find_best_KNN([3,5,10,20,30,50,100,300,1000])
+    # find_best_RandomForest([3,5,10,20,50,100])
+
 
 if __name__ == "__main__":
     main()
