@@ -36,21 +36,17 @@ def main():
 
         return my_data
 
-    def classify_svm(training_set, training_outcomes, validation_set):
+    def classify(training_set, training_outcomes, validation_set, classifyer_type):
 
-        # Define and train the classifyer
-        classifier = svm.SVC(gamma=0.001, C=100.)
-        classifier.fit(training_set, training_outcomes)
-        
-        # Predict new outcomes
-        prediction = classifier.predict(validation_set)
+        # Assign the type of the classifyer
+        if classifyer_type == "SVM":
+            classifier = svm.SVC(gamma=0.001, C=100.)
+        elif classifyer_type == "KNN":
+            classifier = KNeighborsClassifier(n_neighbors=10)
+        else:
+            print("Wrong classifyer type!")
 
-        return prediction
-
-    def classify_knn(training_set, training_outcomes, validation_set):
-        
-        # Define and train the classifyer
-        classifier = KNeighborsClassifier(n_neighbors=20)
+        # Train the classifyer
         classifier.fit(training_set, training_outcomes)
         
         # Predict new outcomes
@@ -75,15 +71,6 @@ def main():
         combination_counter = 0
         validations_range = len(data) - validation_size
 
-        # Assign the type of the classifyer
-        if classifyer_type == "SVM":
-            predict = classify_svm
-        elif classifyer_type == "KNN":
-            predict = classify_knn
-        else:
-            print("Wrong classifyer type!")
-            return "No efficiency computed!"
-
         # Iterate over different combinations of trainig/validation sets
         for i in range(0, validations_range, validation_step):
 
@@ -99,7 +86,7 @@ def main():
             training_outcomes = np.concatenate((data[0:i, 0], data[(i + validation_size):, 0]), axis=0)
 
             # Classify with the specified algorithm
-            prediction = predict(training_set, training_outcomes, validation_set)
+            prediction = classify(training_set, training_outcomes, validation_set, classifyer_type)
 
             # Compare predicted outcomes with known outcomes
             num_predictions = len(validation_outcomes)
@@ -129,7 +116,7 @@ def main():
     validation_step_size = 300
 
     # Apply cross validation on the data set
-    efficiency = compute_efficiency(my_data, validation_set_size, validation_step_size, "KNN")
+    efficiency = compute_efficiency(my_data, validation_set_size, validation_step_size, "SVM")
     
     # Print cross validation results
     print("Total Efficiency: %s" % (efficiency))
