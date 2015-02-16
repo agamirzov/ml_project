@@ -3,10 +3,11 @@ import pandas as pd
 from sklearn import svm
 
 def main():
+    
     PATH_TO_TRAINING_SET = "../data/training/training_set.csv"
 
     seasons = ['2007_2008', '2008_2009', '2009_2010', '2010_2011',\
-                   '2011_2012', '2012_2013', '2013_2014', '2014_2015']
+               '2011_2012', '2012_2013', '2013_2014', '2014_2015']
 
     NUM_TEAMS = 20
     NUM_SEASONS = len(seasons)
@@ -34,30 +35,93 @@ def main():
 
         return my_data
 
+    def classify_svm(training_set, training_outcomes, validation_set, validation_outcomes):
+        """ Defines an SVM classifier and compute efficiency for one particular combination of trainig and validation sets
+        
+        Arguments:
+            trainig_set - (matrix of doubles) 
+            training_outcomes - (vector of doubles) 
+            validation_set - (matrix of doubles)
+            validation_outcomes - (vector of doubles) 
+        
+        Returns:
+            efficiency - (double) efficiency for one particular combination
+        """
+        
+        # Define and train the classifyer
+        classifier = svm.SVC(gamma=0.001, C=100.)
+        classifier.fit(training_set, training_outcomes)
+        
+        # Predict new outcomes
+        prediction = classifier.predict(validation_set)
+
+        # Compare predicted outcomes with known outcomes
+        num_predictions = len(validation_outcomes)
+        correct = np.count_nonzero(prediction == validation_outcomes)
+        
+        # Compute how many predicted values matching the known outcomes
+        efficiency = correct/num_predictions
+        
+        return efficiency
+
+    def compute_efficiency(data, validation_size, validation_step):
+        """Computes average efficiency of the algorithm using cross validation
+        
+        Arguments:
+            data - (matrix of doubles) initial trainig set
+            validation_size - (int) length of the validation set (number of input vectors)
+            validation_step - (int) intervals between different validation sets
+        
+        Returns:
+            total_efficiency - (double) average efficiency for all possible combinations of trainig and validation sets
+        """
+
+        # Init total efficiency, the combination counter and the range
+        total_efficiency = 0;                            
+        combination_counter = 0
+        validations_range = len(data) - validation_size
+
+        # Iterate over different combinations of trainig/validation sets
+        for i in range(0, validations_range, validation_step):
+
+            # Increment the validation counter
+            combination_counter += 1
+            
+            # Set up the validation set and it's outcomes
+            validation_set = data[i:(i + validation_size), 1:]
+            validation_outcomes = data[i:(i + validation_size), 0]
+        
+            # Set up the remaining data as the trainig set and it's outcomes
+            training_set = np.concatenate((data[0:i, 1:], data[(i + validation_size):, 1:]), axis=0)
+            training_outcomes = np.concatenate((data[0:i, 0], data[(i + validation_size):, 0]), axis=0)
+
+            # Classify with the specified algorithm
+            efficiency = classify_svm(training_set, training_outcomes, validation_set, validation_outcomes)
+            print("Validation step %d is computed. Efficiency: %f" % (combination_counter, efficiency))
+
+            # Accumulate efficiency for all possible combinations
+            total_efficiency += efficiency
+
+        # Compute average efficiency
+        total_efficiency = total_efficiency/combination_counter
+
+        return total_efficiency
+
+    """ Start program """
+    
     my_data = read_data()
 
+    # Length of the validation set (number of input vectors)
+    validation_set_size = 300
 
-    #Define the target vector and the data points
+    # Intervals between different validation sets
+    validation_step_size = 300
 
-    threshold = 1700
-    training_set = my_data[:threshold, 1:]
-    target_points = my_data[:threshold, 0]
-
-    testing_set = my_data[threshold: threshold + 200, 1:]
-    testing_target = my_data[threshold: threshold + 200, 0]
-
-
-    def classify():
-        classifier = svm.SVC(gamma=0.001, C=100.)
-        print(classifier.fit(training_set, target_points))
-        prediction = classifier.predict(testing_set)
-
-        total = 200.
-        correct = np.count_nonzero(prediction == testing_target)
-        print(correct/total)
-
-
-    classify()
+    # Apply cross validation on the data set
+    efficiency = compute_efficiency(my_data, validation_set_size, validation_step_size)
+    
+    # Print cross validation results
+    print(efficiency)
 
 if __name__ == "__main__":
     main()
