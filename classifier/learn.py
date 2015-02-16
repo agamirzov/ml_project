@@ -52,29 +52,38 @@ def main():
 
         return [prediction, predicition_probability] if probability else prediction
 
-    def compute_efficiency(data, validation_size, validation_step, classifier):
+    def compute_efficiency(data, k, classifier):
         """Computes average efficiency of the algorithm using cross validation
         
         Arguments:
             data - (matrix of doubles) initial trainig set
-            validation_size - (int) length of the validation set (number of input vectors)
-            validation_step - (int) intervals between different validation sets
+            k - (int) number of folds
+            classifier - classifier object which has fit() and predict() functions
         
         Returns:
             total_efficiency - (double) average efficiency for all possible combinations of trainig and validation sets
         """
 
-        # Init total efficiency, the combination counter and the range
-        total_efficiency = 0;                            
-        combination_counter = 0
-        validations_range = len(data) - validation_size
+        # Compute intervals
+        interval = int(len(data) / k)
+        remainder = len(data) % k
+        
+        # Compute offsets
+        offsets = np.zeros(k + 1)
+        for i in range(k):
+            offsets[i] = i * interval
+        offsets[k] = k * interval + remainder
 
-        # Iterate over different combinations of trainig/validation sets
-        for i in range(0, validations_range, validation_step):
+        # Init counter and efficiency
+        counter = 0
+        total_efficiency = 0
 
-            # Increment the validation counter
-            combination_counter += 1
-            
+        # Iterate over the  
+        for i in offsets[0:k]:
+
+            # Compute size of the validation set
+            validation_size = offsets[counter + 1] - offsets[counter]
+
             # Set up the validation set and it's outcomes
             validation_set = data[i:(i + validation_size), 1:]
             validation_outcomes = data[i:(i + validation_size), 0]
@@ -92,15 +101,15 @@ def main():
         
             # Compute how many predicted values matching the known outcomes (%)
             efficiency = correct/num_predictions
-            print("Validation step %d is computed. Efficiency: %f" % (combination_counter, efficiency))
 
             # Accumulate efficiency for all possible combinations
             total_efficiency += efficiency
+            
+            # Increasing counter
+            counter += 1
 
-        # Compute average efficiency
-        total_efficiency = total_efficiency/combination_counter
-
-        return total_efficiency
+        # Return average efficiency
+        return total_efficiency / counter
 
     """ Start program """
     
@@ -108,9 +117,8 @@ def main():
     my_data = read_data()
 
     # Apply cross validation on the data set
-    efficiency = compute_efficiency(my_data, 300, 300, svm.SVC(gamma=0.001, C=100.))
-
-    
+    efficiency = compute_efficiency(my_data, 10, svm.SVC(gamma=0.001, C=100.))
+    print("Efficiency: %.2f" % efficiency)
 
 if __name__ == "__main__":
     main()
