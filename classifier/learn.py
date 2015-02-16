@@ -2,6 +2,9 @@ import numpy as np
 import pandas as pd
 from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn import tree
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import BernoulliNB
 
 def main():
     
@@ -36,13 +39,19 @@ def main():
 
         return my_data
 
-    def classify(training_set, training_outcomes, validation_set, classifyer_type):
+    def classify(training_set, training_outcomes, validation_set, classifier_type):
 
         # Assign the type of the classifyer
-        if classifyer_type == "SVM":
+        if classifier_type == "SVM":
             classifier = svm.SVC(gamma=0.001, C=100.)
-        elif classifyer_type == "KNN":
+        elif classifier_type == "KNN":
             classifier = KNeighborsClassifier(n_neighbors=10)
+        elif classifier_type == "DT":
+            classifier = tree.DecisionTreeClassifier()
+        elif classifier_type == "RF":
+            classifier = RandomForestClassifier(n_estimators=15)
+        elif classifier_type == "Bern":
+            classifier = BernoulliNB()
         else:
             print("Wrong classifyer type!")
 
@@ -54,7 +63,7 @@ def main():
 
         return prediction
 
-    def compute_efficiency(data, validation_size, validation_step, classifyer_type):
+    def compute_efficiency(data, validation_size, validation_step, classifier_type):
         """Computes average efficiency of the algorithm using cross validation
         
         Arguments:
@@ -86,7 +95,7 @@ def main():
             training_outcomes = np.concatenate((data[0:i, 0], data[(i + validation_size):, 0]), axis=0)
 
             # Classify with the specified algorithm
-            prediction = classify(training_set, training_outcomes, validation_set, classifyer_type)
+            prediction = classify(training_set, training_outcomes, validation_set, classifier_type)
 
             # Compare predicted outcomes with known outcomes
             num_predictions = len(validation_outcomes)
@@ -116,7 +125,7 @@ def main():
     validation_step_size = 300
 
     # Apply cross validation on the data set
-    efficiency = compute_efficiency(my_data, validation_set_size, validation_step_size, "SVM")
+    efficiency = compute_efficiency(my_data, validation_set_size, validation_step_size, "Bern")
     
     # Print cross validation results
     print("Total Efficiency: %s" % (efficiency))
