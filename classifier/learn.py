@@ -39,31 +39,20 @@ def main():
 
         return my_data
 
-    def classify(training_set, training_outcomes, validation_set, classifier_type):
-
-        # Assign the type of the classifyer
-        if classifier_type == "SVM":
-            classifier = svm.SVC(gamma=0.001, C=100.)
-        elif classifier_type == "KNN":
-            classifier = KNeighborsClassifier(n_neighbors=10)
-        elif classifier_type == "DT":
-            classifier = tree.DecisionTreeClassifier()
-        elif classifier_type == "RF":
-            classifier = RandomForestClassifier(n_estimators=15)
-        elif classifier_type == "Bern":
-            classifier = BernoulliNB()
-        else:
-            print("Wrong classifyer type!")
+    def classify(training_set, training_target, validation_set, classifier, probability=False):
 
         # Train the classifyer
-        classifier.fit(training_set, training_outcomes)
+        classifier.fit(training_set, training_target)
         
         # Predict new outcomes
         prediction = classifier.predict(validation_set)
+        
+        if probability:
+            predicition_probability = classifier.predict_proba(validation_set)
 
-        return prediction
+        return [prediction, predicition_probability] if probability else prediction
 
-    def compute_efficiency(data, validation_size, validation_step, classifier_type):
+    def compute_efficiency(data, validation_size, validation_step, classifier):
         """Computes average efficiency of the algorithm using cross validation
         
         Arguments:
@@ -92,10 +81,10 @@ def main():
         
             # Set up the remaining data as the trainig set and it's outcomes
             training_set = np.concatenate((data[0:i, 1:], data[(i + validation_size):, 1:]), axis=0)
-            training_outcomes = np.concatenate((data[0:i, 0], data[(i + validation_size):, 0]), axis=0)
+            training_target = np.concatenate((data[0:i, 0], data[(i + validation_size):, 0]), axis=0)
 
             # Classify with the specified algorithm
-            prediction = classify(training_set, training_outcomes, validation_set, classifier_type)
+            prediction = classify(training_set, training_target, validation_set, classifier)
 
             # Compare predicted outcomes with known outcomes
             num_predictions = len(validation_outcomes)
@@ -118,17 +107,10 @@ def main():
     # Read .csv file
     my_data = read_data()
 
-    # Length of the validation set (number of input vectors)
-    validation_set_size = 300
-
-    # Intervals between different validation sets
-    validation_step_size = 300
-
     # Apply cross validation on the data set
-    efficiency = compute_efficiency(my_data, validation_set_size, validation_step_size, "Bern")
+    efficiency = compute_efficiency(my_data, 300, 300, svm.SVC(gamma=0.001, C=100.))
+
     
-    # Print cross validation results
-    print("Total Efficiency: %s" % (efficiency))
 
 if __name__ == "__main__":
     main()
