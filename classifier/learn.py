@@ -31,6 +31,8 @@ def main():
 
         #Remove the first column (which contains indices)
         my_data = np.delete(my_data, 0, 1)
+        my_data = np.delete(my_data, 8, 1)
+        my_data = np.delete(my_data, 15, 1)
 
         #Only keep the training examples for matches which have already occurred
         my_data = my_data[:TOTAL_VALID_MATCHES, :]
@@ -38,9 +40,12 @@ def main():
         #Remove NaNs
         my_data = my_data[~np.isnan(my_data).any(axis=1)]
 
+        #print(my_data[0,:])
+
         return my_data
 
-    def classify(training_set, training_target, validation_set, classifier, probability=False):
+
+    def classify(training_set, training_target, validation_set, classifier, probability=True):
 
         # Train the classifyer
         classifier.fit(training_set, training_target)
@@ -52,6 +57,7 @@ def main():
             predicition_probability = classifier.predict_proba(validation_set)
 
         return [prediction, predicition_probability] if probability else prediction
+
 
     def compute_efficiency(data, k, classifier):
         """Computes average efficiency of the algorithm using cross validation
@@ -78,6 +84,8 @@ def main():
         # Init counter and efficiency
         counter = 0
         total_efficiency = 0
+        prediction = 0
+        prediction_prob = 0
 
         # Iterate over the  
         for i in offsets[0:k]:
@@ -94,7 +102,7 @@ def main():
             training_target = np.concatenate((data[0:i, 0], data[(i + validation_size):, 0]), axis=0)
 
             # Classify with the specified algorithm
-            prediction = classify(training_set, training_target, validation_set, classifier)
+            prediction, prediction_prob = classify(training_set, training_target, validation_set, classifier)
 
             # Compare predicted outcomes with known outcomes
             num_predictions = len(validation_outcomes)
@@ -108,6 +116,9 @@ def main():
             
             # Increasing counter
             counter += 1
+
+        print(prediction)
+        print(prediction_prob)
 
         # Return average efficiency
         return total_efficiency / counter
@@ -138,6 +149,7 @@ def main():
         print("Best Gamma = %f Best C = %d Efficiency = %f" % (best_gamma, best_c, efficiency))
         return best_gamma, best_c
 
+
     def find_best_KNN(neighbors):
         """ Computes the best combination parameters for KNN        
 
@@ -158,6 +170,7 @@ def main():
             print("Current neighbors = %d Efficiency = %f" % (nn, old_efficiency))
         print("Best neighbors = %d Efficiency = %f" % (best_neighbors, efficiency))
         return best_neighbors
+
 
     def find_best_RandomForest(estimators):
         """ Computes the best combination parameters for KNN        
@@ -180,6 +193,7 @@ def main():
         print("Best estimators = %d Efficiency = %f" % (best_estimators, efficiency))
         return best_estimators
 
+
     class FFNetwork:
         """A wrapper for the neurolab.net.newff()"""
 
@@ -200,6 +214,10 @@ def main():
     # Read .csv file
     my_data = read_data()
 
+    # find_best_SVM([0.005,0.007,0.0075], [90,100,300, 1000, 1100, 1150, 1200])
+    # find_best_RandomForest([10, 15, 20, 25, 30, 35, 40, 45, 50])
+    # find_best_KNN([5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60 ,70 ,80, 90, 100])
+    compute_efficiency(my_data, 10, svm.SVC(gamma=0.007, C=100, probability=True))
 
 if __name__ == "__main__":
     main()

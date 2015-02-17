@@ -18,6 +18,11 @@ def main():
     DRAW_PTS = 1
     LOSS_PTS = 0
 
+    # Season weights (0 - current, 1 - one before, 2 - two before)
+    WEIGHT_SEASON_0 = 0.6
+    WEIGHT_SEASON_1 = 0.3
+    WEIGHT_SEASON_2 = 0.1
+
     def read_data():
         """Reads data from the csv files, return two arrays containing match_history and standings_history"""
         def match_file_name(season):
@@ -182,20 +187,12 @@ def main():
                 (each row contains: [t1_pts, t2_pts, t1_scrd, t1_recv])
             """
 
-            # Search for two cases:
-            # 1. team1 - home
-            # 2. team1 - away
+            # Search for two cases: 1)team1:home 2)team2:home
             common_home = matches.loc[matches['team1'] == team1].loc[matches['team2'] == team2]
             common_away = matches.loc[matches['team1'] == team2].loc[matches['team2'] == team1]
             
             # Rearrange columns in order to put team1 on the first place (for away matches)
-            for index, row in common_away.iterrows():
-                temp_team = row['team1']
-                temp_score = row['score1']
-                row['team1'] = row['team2']
-                row['score1'] = row['score2']
-                row['team2'] = temp_team
-                row['score2'] = temp_score
+            common_away.columns = ['match_day','team2','team1','score2','score1']
 
             # Concatenate and compute parameters for each match
             common = pd.concat([common_home, common_away])
@@ -208,24 +205,20 @@ def main():
                 if row['score1'] > row['score2']:
                     t1_avg_pts = WIN_PTS
                     t2_avg_pts = LOSS_PTS
-                    t1_avg_scrd = row['score1']
-                    t1_avg_recv = row['score2']
 
                 elif row['score1'] < row['score2']:
                     t1_avg_pts = LOSS_PTS
                     t2_avg_pts = WIN_PTS
-                    t1_avg_scrd = row['score1']
-                    t1_avg_recv = row['score2']
-
                 else:
                     t1_avg_pts = DRAW_PTS
                     t2_avg_pts = DRAW_PTS
-                    t1_avg_scrd = row['score1']
-                    t1_avg_recv = row['score2']
+
+                t1_avg_scrd = row['score1']
+                t2_avg_scrd = row['score2']
 
                 # Accumulating results in the DataFrame
                 df = pd.DataFrame({'t1_avg_pts_mu': [t1_avg_pts], 't2_avg_pts_mu': [t2_avg_pts],
-                                   't1_avg_scrd_mu': [t1_avg_scrd], 't1_avg_recv_mu': [t1_avg_recv]})
+                                   't1_avg_scrd_mu': [t1_avg_scrd], 't2_avg_scrd_mu': [t2_avg_scrd]})
                 result = pd.concat([result, df])
 
             result = apply_weight(result, season)
@@ -233,7 +226,7 @@ def main():
             return result
 
         # Init empty DataFrame
-        common_matches = pd.DataFrame(None)
+        common_matches_data = pd.DataFrame(None)
 
         # Read current season string
         try:
@@ -248,15 +241,15 @@ def main():
             # Matches for each season
             matches = match_history[season_id]
 
-            # Search and accumulate common matches in the DataFrame
+            # Search and accumulate common matches data in the DataFrame
             if season_id == season_index:
                 matches = matches[:(match_day - 1)*MATCHES_PER_MD] # Restrict matches to current match day
-                common_matches = pd.concat([common_matches, compute_parameters(matches, team1, team2, season_index - season_id)])
+                common_matches_data = pd.concat([common_matches_data, compute_parameters(matches, team1, team2, season_index - season_id)])
             else:
-                common_matches = pd.concat([common_matches, compute_parameters(matches, team1, team2, season_index - season_id)])
+                common_matches_data = pd.concat([common_matches_data, compute_parameters(matches, team1, team2, season_index - season_id)])
 
         # Write result
-        results = (common_matches.sum())/len(common_matches)
+        results = (common_matches_data.sum())/len(common_matches_data)
 
         return results
 
@@ -295,6 +288,55 @@ def main():
         return result
 
 
+    def home_away_performance_till_date(team, seasons_to_consider, season, match_day):
+
+        # Read current season string
+        try:
+            season_index = seasons.index(season)
+        except ValueError:
+            print("Incorrect season name for matchup_till_season")
+            return pd.Series(None)
+
+        home_pts = 0
+        away_pts = 0
+
+        total_home_pts = 0
+        total_away_pts = 0
+        total_matches = 0
+
+        # Iterate over previous seasons
+        for season_id in range(season_index - seasons_to_consider, season_index + 1):
+            
+            # Full standings for each season
+            standings = standings_history[season_id]
+
+            # Standings depending on the season
+            if season_id == season_index:
+                if match_day > 1:
+                    # Get standings one day before the current matchday
+                    standings = standings.loc[standings['match_day'] == (match_day - 1)]
+                    total_matches += match_day - 1
+            else:
+                # Get last match day standings
+                standings = standings.loc[standings['match_day'] == MDS_PER_SEASON]
+                total_matches += MDS_PER_SEASON
+
+            # Find the team and data
+            standings = standings.loc[standings['team'] == team]
+            if not standings.empty:
+                home_pts = apply_weight(standings.iloc[0]['home_points'], season_index - season_id)
+                away_pts = apply_weight(standings.iloc[0]['away_points'], season_index - season_id)
+
+            # Accumulate total points
+            total_home_pts += home_pts
+            total_away_pts += away_pts
+
+        result = pd.Series({'avg_home_points' : total_home_pts / total_matches,
+                            'avg_away_points' : total_away_pts / total_matches})
+
+        return result
+
+
     def apply_weight(value, season):
         """Apply the weight to the parameter depending on the season
         
@@ -307,11 +349,11 @@ def main():
         """
 
         if season == 0:
-            weight = 0.6
+            weight = WEIGHT_SEASON_0
         elif season == 1:
-            weight = 0.3
+            weight = WEIGHT_SEASON_1
         else:
-            weight = 0.1
+            weight = WEIGHT_SEASON_2
 
         return value*weight
 
@@ -338,8 +380,14 @@ def main():
         perf2.rename(index={'avg_missed_per_game' : 't2_avg_recv_tot',
                             'avg_points_per_game' : 't2_avg_pts_tot',
                             'avg_scored_per_game' : 't2_avg_scrd_tot'}, inplace=True)
+        ha_perf1 = home_away_performance_till_date(team1, seasons_to_consider, season, match_day)
+        ha_perf1.rename(index={'avg_home_points' : 't1_avg_home_pts_tot',
+                               'avg_away_points' : 't1_avg_away_pts_tot'}, inplace=True)
+        ha_perf2 = home_away_performance_till_date(team2, seasons_to_consider, season, match_day)
+        ha_perf2.rename(index={'avg_home_points' : 't2_avg_home_pts_tot',
+                               'avg_away_points' : 't2_avg_away_pts_tot'}, inplace=True)
         matchups = matchups_till_date(team1, team2, seasons_to_consider, season, match_day)
-        vector = pd.concat([standing, perf1, perf2, matchups])
+        vector = pd.concat([standing, perf1, perf2, ha_perf1, ha_perf2, matchups])
         return vector
 
 
@@ -379,7 +427,8 @@ def main():
     match_history, standings_history = read_data()
 
     build_training_set()
-
+    #matchups_till_date(9, 16, 2, "2012_2013", 38)
+    #home_away_performance_till_date(9, SEASONS_TO_CONSIDER, "2012_2013", 38)
 
 if __name__ == "__main__":
     main()
