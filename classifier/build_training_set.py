@@ -19,8 +19,8 @@ def main():
     LOSS_PTS = 0
 
     # Season weights (0 - current, 1 - one before, 2 - two before)
-    WEIGHT_SEASON_0 = 0.6
-    WEIGHT_SEASON_1 = 0.3
+    WEIGHT_SEASON_0 = 0.3
+    WEIGHT_SEASON_1 = 0.6
     WEIGHT_SEASON_2 = 0.1
 
     def read_data():
@@ -387,7 +387,8 @@ def main():
         ha_perf2.rename(index={'avg_home_points' : 't2_avg_home_pts_tot',
                                'avg_away_points' : 't2_avg_away_pts_tot'}, inplace=True)
         matchups = matchups_till_date(team1, team2, seasons_to_consider, season, match_day)
-        vector = pd.concat([standing, perf1, perf2, ha_perf1, ha_perf2, matchups])
+        teams = pd.Series({'t1': team1, 't2': team2})
+        vector = pd.concat([standing, perf1, perf2, ha_perf1, ha_perf2, matchups, teams])
         return vector
 
 

@@ -25,14 +25,19 @@ def main():
     TOTAL_VALID_MATCHES = ((NUM_SEASONS - SEASONS_TO_CONSIDER) - 1) * MATCHES_PER_SEASON + \
                     LAST_MD * MATCHES_PER_MD
 
+    def remove_columns(data, columns_to_delete):
+        columns_to_delete = np.sort(columns_to_delete)
+        for i in np.argsort(columns_to_delete[::-1]):
+            data = np.delete(data, columns_to_delete[i], 1)
+
+        return data
+
     def read_data():
         #Read the training examples from the csv file (except the header)
         my_data = np.genfromtxt(PATH_TO_TRAINING_SET, delimiter=',', skip_header=1)
 
         #Remove the first column (which contains indices)
         my_data = np.delete(my_data, 0, 1)
-        my_data = np.delete(my_data, 8, 1)
-        my_data = np.delete(my_data, 15, 1)
 
         #Only keep the training examples for matches which have already occurred
         my_data = my_data[:TOTAL_VALID_MATCHES, :]
@@ -40,12 +45,37 @@ def main():
         #Remove NaNs
         my_data = my_data[~np.isnan(my_data).any(axis=1)]
 
-        #print(my_data[0,:])
+        #Remove different columns from the training set for testing
+        """
+        Columns:
+
+            t1 - 1
+            t1_avg_away_pts_tot - 2
+            t1_avg_home_pts_tot - 3
+            t1_avg_pts_mu - 4
+            t1_avg_pts_tot - 5
+            t1_avg_recv_tot - 6
+            t1_avg_scrd_mu - 7
+            t1_avg_scrd_tot - 8 
+            t1_standing - 9
+
+            t2 - 10
+            t2_avg_away_pts_tot - 11  
+            t2_avg_home_pts_tot - 12
+            t2_avg_pts_mu - 13
+            t2_avg_pts_tot - 14
+            t2_avg_recv_tot - 15
+            t2_avg_scrd_mu - 16
+            t2_avg_scrd_tot - 17
+            t2_standing - 
+        """
+        #my_data = remove_columns(my_data, [1,10])
+        print(my_data)
 
         return my_data
 
-
-    def classify(training_set, training_target, validation_set, classifier, probability=True):
+ 
+    def classify(training_set, training_target, validation_set, classifier, probability=False):
 
         # Train the classifyer
         classifier.fit(training_set, training_target)
@@ -102,7 +132,7 @@ def main():
             training_target = np.concatenate((data[0:i, 0], data[(i + validation_size):, 0]), axis=0)
 
             # Classify with the specified algorithm
-            prediction, prediction_prob = classify(training_set, training_target, validation_set, classifier)
+            prediction = classify(training_set, training_target, validation_set, classifier)
 
             # Compare predicted outcomes with known outcomes
             num_predictions = len(validation_outcomes)
@@ -118,7 +148,7 @@ def main():
             counter += 1
 
         print(prediction)
-        print(prediction_prob)
+        # print(prediction_prob)
 
         # Return average efficiency
         return total_efficiency / counter
@@ -140,7 +170,7 @@ def main():
         best_c = 0
         for ga in gamas:
             for c in cs:
-                old_efficiency = compute_efficiency(my_data, 10, svm.SVC(gamma=ga, C=c))
+                old_efficiency = compute_efficiency(my_data, 10, svm.SVC(gamma=ga, C=c, kernel='sigmoid'))
                 if(efficiency < old_efficiency):
                     efficiency = old_efficiency
                     best_gamma = ga
@@ -214,10 +244,10 @@ def main():
     # Read .csv file
     my_data = read_data()
 
-    # find_best_SVM([0.005,0.007,0.0075], [90,100,300, 1000, 1100, 1150, 1200])
-    # find_best_RandomForest([10, 15, 20, 25, 30, 35, 40, 45, 50])
-    # find_best_KNN([5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60 ,70 ,80, 90, 100])
-    compute_efficiency(my_data, 10, svm.SVC(gamma=0.007, C=100, probability=True))
+    #find_best_SVM([0.0001, 0.0003, 0.0005, 0.001], [30, 50, 90, 100, 300, 1000, 1100, 1150, 1200])
+    #find_best_RandomForest([10, 15, 20, 25, 30, 35, 40, 45, 50])
+    find_best_KNN([5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60 ,70 ,80, 90, 100])
+    # print(compute_efficiency(my_data, 10, svm.SVC(gamma=0.007, C=100, probability=True)))
 
 if __name__ == "__main__":
     main()
