@@ -68,7 +68,7 @@ def main():
             t2_avg_recv_tot - 15
             t2_avg_scrd_mu - 16
             t2_avg_scrd_tot - 17
-            t2_standing - 
+            t2_standing - 18
         """
         #my_data = remove_columns(my_data, [1,10])
         print(my_data)
@@ -133,9 +133,10 @@ def main():
             training_target = np.concatenate((data[0:i, 0], data[(i + validation_size):, 0]), axis=0)
 
             # Classify with the specified algorithm
-            prediction, prediction_prob = classify(training_set, training_target, validation_set, classifier)
+            prediction = classify(training_set, training_target, validation_set, classifier)
+            p, prediction_prob = classify(training_set, training_target, validation_set, classifier)
 
-            # prediction = manual_prediction(prediction_prob,0.07)
+            prediction = manual_prediction(prediction_prob,0.07)
             # Compare predicted outcomes with known outcomes
             num_predictions = len(validation_outcomes)
             correct = np.count_nonzero(prediction == validation_outcomes)
@@ -148,6 +149,8 @@ def main():
             
             # Increasing counter
             counter += 1
+
+        print(prediction)
 
         # print(prediction)
         # print(prediction_prob)
@@ -185,7 +188,8 @@ def main():
         best_c = 0
         for ga in gamas:
             for c in cs:
-                old_efficiency = compute_efficiency(my_data, 10, svm.SVC(gamma=ga, C=c))
+                old_efficiency = compute_efficiency(my_data, 10, svm.SVC(gamma=ga, C=c, kernel='sigmoid'))
+                old_efficiency = compute_efficiency(my_data, 10, svm.SVC(gamma=ga, C=c,probability=True))
                 if(efficiency < old_efficiency):
                     efficiency = old_efficiency
                     best_gamma = ga
@@ -259,9 +263,13 @@ def main():
     # Read .csv file
     my_data = read_data()
 
-    # find_best_SVM([0.005,0.007,0.0075], [90,100,300, 1000, 1100, 1150, 1200])
-    # find_best_RandomForest([10, 15, 20, 25, 30, 35, 40, 45, 50])
-    # find_best_KNN([5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60 ,70 ,80, 90, 100])
+    #find_best_SVM([0.0001, 0.0003, 0.0005, 0.001], [30, 50, 90, 100, 300, 1000, 1100, 1150, 1200])
+    #find_best_RandomForest([10, 15, 20, 25, 30, 35, 40, 45, 50])
+    find_best_KNN([5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60 ,70 ,80, 90, 100])
+
+    # find_best_SVM([0.001,0.007], [90,100,300, 1000, 1100, 1150, 1200])
+    # find_best_RandomForest([10, 15, 20, 25, 30, 35, 40, 45, 50,100])
+    find_best_KNN([5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60 ,70 ,80, 90, 100,180])
     # print(compute_efficiency(my_data, 10, svm.SVC(gamma=0.007, C=100, probability=True)))
 
 if __name__ == "__main__":

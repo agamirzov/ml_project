@@ -6,7 +6,6 @@ from sklearn import tree
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.naive_bayes import GaussianNB
-import random
 
 def main():
     
@@ -133,9 +132,8 @@ def main():
             training_target = np.concatenate((data[0:i, 0], data[(i + validation_size):, 0]), axis=0)
 
             # Classify with the specified algorithm
-            prediction, prediction_prob = classify(training_set, training_target, validation_set, classifier)
+            prediction = classify(training_set, training_target, validation_set, classifier)
 
-            # prediction = manual_prediction(prediction_prob,0.07)
             # Compare predicted outcomes with known outcomes
             num_predictions = len(validation_outcomes)
             correct = np.count_nonzero(prediction == validation_outcomes)
@@ -149,26 +147,13 @@ def main():
             # Increasing counter
             counter += 1
 
-        # print(prediction)
+        print(prediction)
         # print(prediction_prob)
 
         # Return average efficiency
         return total_efficiency / counter
 
-    def manual_prediction(probabilities, epsilon):
-        prediction = []
-        cnt = 0
-        for probs in probabilities:
-            if (abs(probs[1] - probs[2]) < epsilon):
-                prediction.append((np.where(probs == random.choice(probs)))[0][0])
-                cnt += 1
-            else:
-                prediction.append((np.where(probs == max(probs)))[0][0])
-        print("Number of random predictions %d" % cnt)
-
-        return prediction
-
-
+   
     def find_best_SVM(gamas, cs):
         """ Computes the best combination parameters for SVM        
 
@@ -185,7 +170,7 @@ def main():
         best_c = 0
         for ga in gamas:
             for c in cs:
-                old_efficiency = compute_efficiency(my_data, 10, svm.SVC(gamma=ga, C=c))
+                old_efficiency = compute_efficiency(my_data, 10, svm.SVC(gamma=ga, C=c, kernel='sigmoid'))
                 if(efficiency < old_efficiency):
                     efficiency = old_efficiency
                     best_gamma = ga
@@ -259,9 +244,9 @@ def main():
     # Read .csv file
     my_data = read_data()
 
-    # find_best_SVM([0.005,0.007,0.0075], [90,100,300, 1000, 1100, 1150, 1200])
-    # find_best_RandomForest([10, 15, 20, 25, 30, 35, 40, 45, 50])
-    # find_best_KNN([5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60 ,70 ,80, 90, 100])
+    #find_best_SVM([0.0001, 0.0003, 0.0005, 0.001], [30, 50, 90, 100, 300, 1000, 1100, 1150, 1200])
+    #find_best_RandomForest([10, 15, 20, 25, 30, 35, 40, 45, 50])
+    find_best_KNN([5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60 ,70 ,80, 90, 100])
     # print(compute_efficiency(my_data, 10, svm.SVC(gamma=0.007, C=100, probability=True)))
 
 if __name__ == "__main__":
