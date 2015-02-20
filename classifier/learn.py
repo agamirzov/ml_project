@@ -1,5 +1,7 @@
+#!/usr/bin/python3
+
+import os
 import numpy as np
-import pandas as pd
 from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import tree
@@ -10,7 +12,7 @@ import random
 
 def main():
     
-    PATH_TO_TRAINING_SET = "../data/training/training_set.csv"
+    PATH_TO_TRAINING_SET = os.path.dirname(os.path.realpath(__file__)) + "/../data/training/training_set.csv"
 
     seasons = ['2007_2008', '2008_2009', '2009_2010', '2010_2011',\
                '2011_2012', '2012_2013', '2013_2014', '2014_2015']
