@@ -10,7 +10,6 @@ def main():
     seasons = ['2007_2008', '2008_2009', '2009_2010', '2010_2011',\
                '2011_2012', '2012_2013', '2013_2014', '2014_2015']
 
-    print(PATH_TO_DATA)
     NUM_TEAMS = 20
     NUM_SEASONS = len(seasons)
     SEASONS_TO_CONSIDER = 2
@@ -432,8 +431,6 @@ def main():
     match_history, standings_history = read_data()
 
     build_training_set()
-    #matchups_till_date(9, 16, 2, "2012_2013", 38)
-    #home_away_performance_till_date(9, SEASONS_TO_CONSIDER, "2012_2013", 38)
 
 if __name__ == "__main__":
     main()
