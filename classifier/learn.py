@@ -2,6 +2,7 @@
 
 import os
 import numpy as np
+import neurolab as nl
 from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import tree
@@ -72,10 +73,15 @@ def main():
             t2_avg_scrd_tot - 17
             t2_standing - 
         """
-        #my_data = remove_columns(my_data, [1,10])
-        print(my_data)
+        my_data = remove_columns(my_data, [1,10])
 
         return my_data
+
+
+    def normalize(array):
+        maximals = np.amax(array, axis=0)
+        
+        return np.divide(array, maximals)
 
  
     def classify(training_set, training_target, validation_set, classifier, probability=False):
@@ -135,7 +141,7 @@ def main():
             training_target = np.concatenate((data[0:i, 0], data[(i + validation_size):, 0]), axis=0)
 
             # Classify with the specified algorithm
-            prediction, prediction_prob = classify(training_set, training_target, validation_set, classifier)
+            prediction = classify(training_set, training_target, validation_set, classifier)
 
             # prediction = manual_prediction(prediction_prob,0.07)
             # Compare predicted outcomes with known outcomes
@@ -192,7 +198,7 @@ def main():
                     efficiency = old_efficiency
                     best_gamma = ga
                     best_c = c
-                print("Current gamma = %f Current C = %d Efficiency = %f" % (ga, c, old_efficiency))
+                print("%f \t %d \t %f" % (ga, c, old_efficiency))
         print("Best Gamma = %f Best C = %d Efficiency = %f" % (best_gamma, best_c, efficiency))
         return best_gamma, best_c
 
@@ -214,7 +220,7 @@ def main():
             if(efficiency < old_efficiency):
                 efficiency = old_efficiency
                 best_neighbors = nn
-            print("Current neighbors = %d Efficiency = %f" % (nn, old_efficiency))
+            print("%d\t %f" % (nn, old_efficiency))
         print("Best neighbors = %d Efficiency = %f" % (best_neighbors, efficiency))
         return best_neighbors
 
@@ -261,15 +267,14 @@ def main():
     # Read .csv file
     my_data = read_data()
 
-    # find_best_SVM([0.005,0.007,0.0075], [90,100,300, 1000, 1100, 1150, 1200])
+    # Normalization
+    my_data = normalize(my_data)
+
+    find_best_SVM([0.001,0.003,0.005, 0.007], [40, 50, 60, 70, 80, 90, 100, 150, 200, 300, 500,1000])
     # find_best_RandomForest([10, 15, 20, 25, 30, 35, 40, 45, 50])
-    # find_best_KNN([5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60 ,70 ,80, 90, 100])
+    #find_best_KNN([x for x in range(1, 700, 5)])
     # print(compute_efficiency(my_data, 10, svm.SVC(gamma=0.007, C=100, probability=True)))
 
 if __name__ == "__main__":
     main()
-
-
-
-
 
