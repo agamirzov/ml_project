@@ -7,8 +7,7 @@ from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import tree
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.naive_bayes import BernoulliNB
-from sklearn.naive_bayes import GaussianNB
+from sklearn.linear_model import LogisticRegression
 import random
 
 def main():
@@ -29,13 +28,6 @@ def main():
     TOTAL_VALID_MATCHES = ((NUM_SEASONS - SEASONS_TO_CONSIDER) - 1) * MATCHES_PER_SEASON + \
                     LAST_MD * MATCHES_PER_MD
 
-    def remove_columns(data, columns_to_delete):
-        columns_to_delete = np.sort(columns_to_delete)
-        for i in np.argsort(columns_to_delete[::-1]):
-            data = np.delete(data, columns_to_delete[i], 1)
-
-        return data
-
     def read_data():
         #Read the training examples from the csv file (except the header)
         my_data = np.genfromtxt(PATH_TO_TRAINING_SET, delimiter=',', skip_header=1)
@@ -50,36 +42,15 @@ def main():
         my_data = my_data[~np.isnan(my_data).any(axis=1)]
 
         #Remove different columns from the training set for testing
-        """
-        Columns:
 
-            t1 - 1
-            t1_avg_away_pts_tot - 2
-            t1_avg_home_pts_tot - 3
-            t1_avg_pts_mu - 4
-            t1_avg_pts_tot - 5
-            t1_avg_recv_tot - 6
-            t1_avg_scrd_mu - 7
-            t1_avg_scrd_tot - 8 
-            t1_standing - 9
-
-            t2 - 10
-            t2_avg_away_pts_tot - 11  
-            t2_avg_home_pts_tot - 12
-            t2_avg_pts_mu - 13
-            t2_avg_pts_tot - 14
-            t2_avg_recv_tot - 15
-            t2_avg_scrd_mu - 16
-            t2_avg_scrd_tot - 17
-            t2_standing - 
-        """
-        my_data = remove_columns(my_data, [1,10])
 
         return my_data
 
 
     def normalize(array):
         maximals = np.amax(array, axis=0)
+        # Target values don't have to be normalized
+        maximals[0] = 1.
         
         return np.divide(array, maximals)
 
@@ -98,7 +69,7 @@ def main():
         return [prediction, predicition_probability] if probability else prediction
 
 
-    def compute_efficiency(data, k, classifier):
+    def cross_validation(data, k, classifier):
         """Computes average efficiency of the algorithm using cross validation
         
         Arguments:
@@ -128,7 +99,6 @@ def main():
 
         # Iterate over the  
         for i in offsets[0:k]:
-
             # Compute size of the validation set
             validation_size = offsets[counter + 1] - offsets[counter]
 
@@ -163,44 +133,49 @@ def main():
         # Return average efficiency
         return total_efficiency / counter
 
-    def manual_prediction(probabilities, epsilon):
-        prediction = []
-        cnt = 0
-        for probs in probabilities:
-            if (abs(probs[1] - probs[2]) < epsilon):
-                prediction.append((np.where(probs == random.choice(probs)))[0][0])
-                cnt += 1
-            else:
-                prediction.append((np.where(probs == max(probs)))[0][0])
-        print("Number of random predictions %d" % cnt)
 
-        return prediction
-
-
-    def find_best_SVM(gamas, cs):
+    def find_best_SVM(gammas=[0.001, 0.002, 0.003, 0.004, 0.005],
+            cs=[20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200, 300, 500,1000],
+            rs=[0., 1., 2., 5., 10., 20., 50.], ds=[1., 2., 3.]):
         """ Computes the best combination parameters for SVM        
 
         Arguments:
-            gamas - (array of doubles) array of the possible gammas
+            gammas - (array of doubles) array of the possible gammas
             cs - (array of ints) array of possible C's
         
         Returns:
             [best_gamma, best_c] - (double) best gamma, (int) best C
         """
+        
+        print("RBF")
         efficiency = 0
         old_efficiency = 0
         best_gamma = 0
         best_c = 0
-        for ga in gamas:
+        for ga in gammas:
             for c in cs:
-                old_efficiency = compute_efficiency(my_data, 10, svm.SVC(gamma=ga, C=c))
+                old_efficiency = cross_validation(my_data, 10, svm.SVC(gamma=ga, C=c, kernel='rbf'))
                 if(efficiency < old_efficiency):
                     efficiency = old_efficiency
                     best_gamma = ga
                     best_c = c
                 print("%f \t %d \t %f" % (ga, c, old_efficiency))
         print("Best Gamma = %f Best C = %d Efficiency = %f" % (best_gamma, best_c, efficiency))
-        return best_gamma, best_c
+
+        print("POLY")
+        efficiency = 0
+        old_efficiency = 0
+        best_r = 0
+        best_d = 0
+        for d in ds:
+            for r in rs:
+                old_efficiency = cross_validation(my_data, 10, svm.SVC(kernel='poly', coef0=r, degree=d))
+                if(efficiency < old_efficiency):
+                    efficiency = old_efficiency
+                    best_r = r
+                    best_d = d
+                print("%d \t %d \t %f" % (r, d, old_efficiency))
+        print("Best R = %d Best d = %d Efficiency = %f" % (best_r, best_d, efficiency))
 
 
     def find_best_KNN(neighbors):
@@ -216,35 +191,13 @@ def main():
         old_efficiency = 0
         best_neighbors = 0
         for nn in neighbors:
-            old_efficiency = compute_efficiency(my_data, 10, KNeighborsClassifier(n_neighbors=nn))
+            old_efficiency = cross_validation(my_data, 10, KNeighborsClassifier(n_neighbors=nn, weights='distance'))
             if(efficiency < old_efficiency):
                 efficiency = old_efficiency
                 best_neighbors = nn
             print("%d\t %f" % (nn, old_efficiency))
         print("Best neighbors = %d Efficiency = %f" % (best_neighbors, efficiency))
         return best_neighbors
-
-
-    def find_best_RandomForest(estimators):
-        """ Computes the best combination parameters for KNN        
-
-        Arguments:
-            estimators - (array of ints) array of possible estimators
-        
-        Returns:
-            best_estimators - (int) the best number of estimators
-        """
-        efficiency = 0
-        old_efficiency = 0
-        best_estimators = 0
-        for ne in estimators:
-            old_efficiency = compute_efficiency(my_data, 10, RandomForestClassifier(n_estimators=ne))
-            if(efficiency < old_efficiency):
-                efficiency = old_efficiency
-                best_estimators = ne
-            print("Current estimators = %d Efficiency = %f" % (ne, old_efficiency))
-        print("Best estimators = %d Efficiency = %f" % (best_estimators, efficiency))
-        return best_estimators
 
 
     class FFNetwork:
@@ -266,14 +219,28 @@ def main():
 
     # Read .csv file
     my_data = read_data()
+    print("Data loaded successfully")
 
     # Normalization
     my_data = normalize(my_data)
+    print("Data normalized successfully")
 
-    find_best_SVM([0.001,0.003,0.005, 0.007], [40, 50, 60, 70, 80, 90, 100, 150, 200, 300, 500,1000])
-    # find_best_RandomForest([10, 15, 20, 25, 30, 35, 40, 45, 50])
-    #find_best_KNN([x for x in range(1, 700, 5)])
-    # print(compute_efficiency(my_data, 10, svm.SVC(gamma=0.007, C=100, probability=True)))
+    #Neural network
+    print("Neural network accuracy = %f" % cross_validation(\
+                my_data, 10, FFNetwork(16))) 
+    #kNN
+    print("kNN accuracy = %f" % cross_validation(\
+                my_data, 10, KNeighborsClassifier(n_neighbors=221, weights='distance')))
+    #SVM
+    print("SVM accuracy = %f" % cross_validation(\
+                my_data, 10, svm.SVC(kernel='rbf', gamma=0.005, C=30)))
+    #Logistic regression
+    print("Logistic regression accuracy = %f" % cross_validation(\
+                my_data, 10, LogisticRegression(C=0.36, penalty='L1')))
+    #Random forest
+    print("Random forest best accuracy = %f" % cross_validation(\
+                my_data, 10, RandomForestClassifier(n_estimators=500, criterion='gini')))
+
 
 if __name__ == "__main__":
     main()

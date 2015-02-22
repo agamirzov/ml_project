@@ -265,40 +265,6 @@ def matchups_till_date(team1, team2, seasons_to_consider, season, match_day, mat
     return results
  
  
-def is_team_home(team, season, match_day, match_history, standings_history):
-    """Return 1 if the team is playing home at the match_day of season, 0 if away
- 
-    Returns -1 if the team doesn't play on the match_day of the season
- 
-    Arguments:
-        team - (int) team id
-        season - (string) name of the season
-        match_day - (int) number of the match day in range(1, MDS_PER_SEASON + 1)
-    Returns:
-        result - (int) 1 if the team is playing home at the match_day of season, 0 if away
-        -1 if the team doesn't play on the match_day of the season
-    """
-    #Check if the season name is valid
-    try:
-        season_index = seasons.index(season)
-    except ValueError:
-        print("Incorrect season name for get_standing!")
-        return None
- 
-    match = match_history[season_index].loc[match_history[season_index]['match_day'] == match_day]
- 
-    if not match.loc[match_history[season_index]['team1'] == team].empty:
-        result = 1
-    elif not match.loc[match_history[season_index]['team2'] == team].empty:
-        result = 0
-    else:
-        print("Team %d doesn't play on md %d of season %d" %(team, match_day, season_index))
-        result = -1
- 
-    result = pd.Series({'t1_home' : result})
-    return result
- 
- 
 def home_away_performance_till_date(team, seasons_to_consider, season, match_day, match_history, standings_history):
  
     # Read current season string
@@ -377,7 +343,6 @@ def build_vector_for_match(team1, team2, seasons_to_consider, season, match_day,
     ha_perf2.rename(index={'avg_home_points' : 't2_avg_home_pts_tot',
                            'avg_away_points' : 't2_avg_away_pts_tot'}, inplace=True)
     matchups = matchups_till_date(team1, team2, seasons_to_consider, season, match_day, match_history, standings_history)
-    teams = pd.Series({'t1': team1, 't2': team2})
     vector = pd.concat([standing, perf1, perf2, ha_perf1, ha_perf2, matchups])
     return vector
  
